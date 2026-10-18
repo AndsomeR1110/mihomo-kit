@@ -72,6 +72,19 @@ git clone https://github.com/AndsomeR1110/mihomo-kit C:\mihomo
 
 校园网环境建议开启（安装时问过一次，忘了就现在双击 apply）。另建议手动关闭浏览器的「使用安全 DNS」。
 
+## 托盘管家（可选，推荐）
+
+装完后跑一次，右下角常驻小环图标，右键即可 启动/停止/重启代理、打开面板、看状态，双击图标直开面板；启停**不弹 UAC**（安装时会向系统申请一次该服务的用户启停权限）：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File <套件目录>\tray\build.ps1
+```
+
+- 用 Windows 自带的 csc 现场编译，无需装任何东西；开机随当前用户自启，内存占用约 85 MB
+- 运行中=彩色环，停止=灰色环；详细说明见 `tray\README.md`
+- 高 DPI（125%/150%/175%）下文字锐利，暗色菜单
+- 卸载：托盘右键「退出托盘」→ 删除 `tray\MihomoTray.exe`，再把启动文件夹里的 `mihomo 托盘管家.lnk` 删掉即可
+
 ## 卸载
 
 1. 双击 `uninstall-service.cmd`（注销服务）
