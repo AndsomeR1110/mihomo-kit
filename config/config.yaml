@@ -1,0 +1,243 @@
+# =====================================================================
+# mihomo 独立内核配置 · Windows 10/11 · TUN 模式
+# 适用内核：mihomo v1.19.32（安装器自动下载）
+#
+# 本文件不含任何节点凭据，可以直接发给 AI 审阅或修改：
+#   节点凭据   → private/nodes.yaml
+#   VPS 地址   → private/infra-direct.yaml
+#
+# 修改流程：改文件 → test-config.cmd → apply-config.cmd
+#           稳定用几天 → mark-good.cmd（保存为“已知可用”版本）
+# =====================================================================
+
+# ---------- 基础 ----------
+mixed-port: 7897              # 与 Clash Verge 同款端口；若电脑上有别的代理软件占用会冲突，安装器会提示
+allow-lan: false
+mode: rule
+log-level: info
+ipv6: false                   # 配合系统层关闭 IPv6，防止 IPv6 流量绕过 TUN
+unified-delay: true
+tcp-concurrent: true
+find-process-mode: strict
+
+# ---------- 本地面板（zashboard） ----------
+external-controller: 127.0.0.1:9097
+secret: "__API_SECRET__"      # prepare 脚本会自动替换为随机值
+external-ui: ui
+external-ui-url: "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip"
+
+profile:
+  store-selected: true        # 记住面板里的手动选择，重启后不变
+  store-fake-ip: true
+
+# ---------- 节点（私有文件） ----------
+# 节点名前缀决定归属：HK- 进香港组，US- 进美国组
+proxy-providers:
+  nodes:
+    type: file
+    path: ./private/nodes.yaml
+    health-check:
+      enable: true
+      url: https://www.gstatic.com/generate_204
+      interval: 600
+      timeout: 5000
+      lazy: false             # 始终检测，面板里随时能看到 4 个节点的延迟
+
+# ---------- 出口分组 ----------
+proxy-groups:
+  - name: 默认出口
+    type: select
+    proxies: [香港组, 美国组, DIRECT]
+
+  - name: 香港组
+    type: select
+    use: [nodes]
+    filter: "^HK-"
+    empty-fallback: REJECT    # 节点文件出错时拒绝连接，而不是悄悄直连
+
+  - name: 美国组              # AI 服务只走这里；两个节点都不可用时直接失败，绝不回落
+    type: select
+    use: [nodes]
+    filter: "^US-"
+    empty-fallback: REJECT
+
+# ---------- 规则集 ----------
+# 远程规则集经“默认出口”下载；prepare 脚本已预先下载到 ruleset/，首次启动不依赖网络
+rule-providers:
+  infra-direct:               # 私有：VPS IP 与自有域名（SSH、订阅、cc-desk-tunnel）
+    type: file
+    behavior: classical
+    format: yaml
+    path: ./private/infra-direct.yaml
+
+  ai-extra:                   # Claude 页面会调用的第三方服务，和 Claude 保持同一出口
+    type: inline
+    behavior: domain
+    payload:
+      - challenges.cloudflare.com   # 登录时的 Cloudflare 人机验证
+      - "+.stripe.com"              # 订阅付款
+      - "+.stripe.network"
+      - "+.intercom.io"             # 客服窗口
+      - "+.intercomcdn.com"
+      - "+.sentry.io"               # 错误上报
+      - "+.segment.io"              # 统计
+      - "+.segment.com"
+      - "+.statsigapi.net"          # 功能开关
+      - "+.featuregates.org"
+
+  private-domain:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/private.mrs"
+    path: ./ruleset/private-domain.mrs
+    interval: 86400
+    proxy: 默认出口
+
+  anthropic:                  # anthropic.com、claude.ai、claude.com、claudeusercontent.com 等
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/anthropic.mrs"
+    path: ./ruleset/anthropic.mrs
+    interval: 86400
+    proxy: 默认出口
+
+  ai:                         # 境外 AI 服务总集（OpenAI、Gemini、Copilot、Cursor 等）
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ai-!cn.mrs"
+    path: ./ruleset/ai.mrs
+    interval: 86400
+    proxy: 默认出口
+
+  cn-domain:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/cn.mrs"
+    path: ./ruleset/cn-domain.mrs
+    interval: 86400
+    proxy: 默认出口
+
+  global-domain:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/geolocation-!cn.mrs"
+    path: ./ruleset/global-domain.mrs
+    interval: 86400
+    proxy: 默认出口
+
+  cn-ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    url: "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cn.mrs"
+    path: ./ruleset/cn-ip.mrs
+    interval: 86400
+    proxy: 默认出口
+
+# ---------- 规则（自上而下，命中即停） ----------
+rules:
+  # 1. 自有基础设施永远直连：VPS 的 SSH、订阅服务、cc-desk-tunnel
+  - RULE-SET,infra-direct,DIRECT,no-resolve
+
+  # 2. 局域网与本机
+  - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
+  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,100.64.0.0/10,DIRECT,no-resolve
+  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,169.254.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,224.0.0.0/4,DIRECT,no-resolve
+  - RULE-SET,private-domain,DIRECT
+
+  # 3. 换网友好：校园网、Windows 联网检测、对时
+  - DOMAIN-SUFFIX,xjtlu.edu.cn,DIRECT
+  - DOMAIN-SUFFIX,msftconnecttest.com,DIRECT
+  - DOMAIN-SUFFIX,msftncsi.com,DIRECT
+  - DST-PORT,123,DIRECT
+
+  # 4. 必须走美国：Claude 及其关联服务、其他境外 AI
+  - RULE-SET,anthropic,美国组
+  - RULE-SET,ai-extra,美国组
+  - RULE-SET,ai,美国组
+
+  # 5. 国内直连
+  - RULE-SET,cn-domain,DIRECT
+
+  # 6. 境外与兜底
+  - RULE-SET,global-domain,默认出口
+  - RULE-SET,cn-ip,DIRECT,no-resolve
+  - MATCH,默认出口
+
+# ---------- DNS ----------
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter-mode: blacklist
+  fake-ip-filter:             # 这些域名返回真实 IP
+    - "rule-set:private-domain"
+    - "rule-set:infra-direct"
+    - "+.lan"
+    - "+.local"
+    - "+.xjtlu.edu.cn"
+    - "+.msftconnecttest.com"
+    - "+.msftncsi.com"
+    - "time.windows.com"
+    - "+.ntp.org"
+    - "stun.*.*"
+    - "stun.*.*.*"
+    - "localhost.ptlogin2.qq.com"
+  use-system-hosts: false
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:
+    - https://223.5.5.5/dns-query
+    - https://1.12.12.12/dns-query
+  nameserver-policy:          # 校园网门户和联网检测用当前网络自己的 DNS（登录前也能解析）
+    "+.xjtlu.edu.cn": system
+    "+.msftconnecttest.com": system
+    "+.msftncsi.com": system
+  proxy-server-nameserver:
+    - https://223.5.5.5/dns-query
+  direct-nameserver:          # 直连流量用当前网络自己的 DNS，换网后自动跟随
+    - system
+
+# ---------- 域名嗅探 ----------
+# 即使应用绕开了本地 DNS（如浏览器自带 DoH），也能从 TLS/HTTP 里识别出域名，
+# 保证 claude.ai 这类域名一定命中“美国组”规则
+sniffer:
+  enable: true
+  force-dns-mapping: true
+  parse-pure-ip: true
+  override-destination: true
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443, 8443]
+
+# ---------- TUN ----------
+tun:
+  enable: true
+  stack: gvisor               # 纯用户态，不依赖 Windows 防火墙放行；观察期可试 mips（上游默认）
+  device: Mihomo
+  auto-route: true
+  auto-detect-interface: true # 换网（学校/宿舍/热点）后自动跟随新网卡
+  strict-route: false         # 换网友好；IPv6 泄漏已由系统层关闭 IPv6 解决
+  dns-hijack:
+    - any:53
+    - tcp://any:53
+  route-exclude-address:      # 局域网段不进 TUN，校园网门户、打印机等直接走系统路由
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - 169.254.0.0/16

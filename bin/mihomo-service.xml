@@ -1,0 +1,29 @@
+<!--
+  WinSW v2.12.0 服务定义。与 mihomo-service.exe（即 WinSW-x64.exe 改名）放在同一目录。
+  安装：以管理员运行 install-service.cmd（不要手动执行 mihomo-service.exe install）
+-->
+<service>
+  <id>mihomo</id>
+  <name>mihomo</name>
+  <description>mihomo proxy core (TUN mode). Managed by the scripts in the parent folder.</description>
+  <executable>%BASE%\mihomo.exe</executable>
+  <arguments>-d "%BASE%\..\config"</arguments>
+  <workingdirectory>%BASE%\..\config</workingdirectory>
+  <startmode>Automatic</startmode>
+
+  <!-- 异常退出后自动拉起：10 秒、30 秒、之后每次 60 秒 -->
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="restart" delay="30 sec"/>
+  <onfailure action="restart" delay="60 sec"/>
+  <resetfailure>1 hour</resetfailure>
+
+  <!-- 停止时先发 Ctrl+C，让 mihomo 自己清理 TUN 路由 -->
+  <stoptimeout>15 sec</stoptimeout>
+
+  <!-- 日志：logs\mihomo-service.out.log，超过 5 MB 滚动，保留 5 份 -->
+  <logpath>%BASE%\..\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>5120</sizeThreshold>
+    <keepFiles>5</keepFiles>
+  </log>
+</service>

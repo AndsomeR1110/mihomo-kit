@@ -1,0 +1,11 @@
+# 私有文件：自有基础设施直连规则（复制为 infra-direct.yaml 后填写）
+#
+# 作用：开 TUN 后，SSH 到 VPS、访问自建订阅服务、cc-desk-tunnel 等流量
+#       不会被卷进代理，始终直连。
+# __OWN_ROOT_DOMAIN__ 填你自有域名的根域（例如 example.com），可覆盖 HK/US 两台的子域名。
+# 如果两台 VPS 用的是不同根域，复制一行 DOMAIN-SUFFIX 分别填写。
+
+payload:
+  - IP-CIDR,__HK_IP__/32,no-resolve
+  - IP-CIDR,__US_IP__/32,no-resolve
+  - DOMAIN-SUFFIX,__OWN_ROOT_DOMAIN__

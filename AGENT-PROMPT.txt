@@ -1,0 +1,18 @@
+请帮我把 mihomo 代理套件装到这台 Windows 电脑上，按下面的步骤来：
+
+1. 把 https://github.com/AndsomeR1110/mihomo-kit 下载到本机（git clone 或下载 ZIP 都行；
+   GitHub 连不上就在完整地址前面加 https://gh-proxy.com/ 前缀走镜像），
+   放到没有空格的英文路径，例如 C:\mihomo。
+2. 我手里有分享者给我的 nodes.yaml 和 infra-direct.yaml 两个文件，把它们放进
+   <下载目录>\config\private\ 。如果我说还没有这两个文件，先停下来提醒我去找分享者要，
+   不要用模板编。
+3. 运行 <下载目录>\install.cmd，会弹 UAC（我本人来点确认），随后有两个问题：
+   - 桌面「mihomo 面板」快捷方式 → 选 Y
+   - 关闭网卡 IPv6 与 Teredo → 我在校园网环境，选 Y
+4. 装完运行 <下载目录>\status.cmd 验收：服务 Running、默认出口有 ip/loc、
+   AI 出口 claude.ai loc=US，把结果给我看。
+5. 有问题按仓库里的 AGENT-INSTALL.md 和 README.md 排查；实在不行运行 rescue.cmd
+   恢复直连，然后告诉我卡在哪一步。
+
+注意：config\private\ 里的文件是凭据，不要查看、修改或外传；也不要动我电脑上
+其他代理软件（Clash Verge 之类装完前我会自己退出）。

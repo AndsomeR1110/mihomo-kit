@@ -1,0 +1,13 @@
+# 敏感文件：只保留模板
+config/private/*.yaml
+!config/private/*.example.yaml
+
+# 运行时生成
+config/ruleset/
+config/ui/
+config/cache.db
+logs/
+backup/
+
+# 二进制
+bin/*.exe

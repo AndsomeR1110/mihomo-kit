@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="ringGrad" x1="64" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#39E6C8"/>
+      <stop offset="0.52" stop-color="#46AAF6"/>
+      <stop offset="1" stop-color="#7A6BF7"/>
+    </linearGradient>
+    <radialGradient id="flowGrad" cx="256" cy="268" r="118" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.56" stop-color="#E3FFF8"/>
+      <stop offset="1" stop-color="#A6F2E3"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="256" cy="256" r="196" fill="none" stroke="url(#ringGrad)" stroke-width="60"/>
+
+  <g fill="none" stroke="url(#flowGrad)" stroke-width="44" stroke-linecap="round">
+    <path d="M256 336 V268"/>
+    <path d="M256 268 L174 206"/>
+    <path d="M256 268 L338 206"/>
+  </g>
+  <circle cx="256" cy="268" r="28" fill="url(#flowGrad)"/>
+</svg>

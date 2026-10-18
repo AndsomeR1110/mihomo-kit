@@ -1,0 +1,64 @@
+# 私有文件：4 个自建节点（复制为 nodes.yaml 后填写，nodes.yaml 不要提交 git、不要发给 AI）
+#
+# 填写来源：
+#   · 拿到分享者给的 nodes.yaml → 直接放进本目录即可，跳过本模板
+#   · 自建节点：IP / UUID / Reality 公钥与 short-id / Hy2 密码来自你的服务端配置
+#   · Hy2 证书指纹 → 在对应 VPS 上执行：
+#       openssl x509 -noout -fingerprint -sha256 -in /etc/sing-box/hy.crt
+#     把输出中 "=" 后面的值原样填入（带冒号即可）
+#
+# 与 Clash Verge 里的写法相比有三处有意的改动：
+#   1. 名称改为 HK- / US- 前缀（分组靠前缀筛选，不要改）
+#   2. Hy2 用证书指纹固定（fingerprint）代替 skip-cert-verify: true，防中间人
+#   3. Hy2 去掉 up/down 100 Mbps，改用 BBR 自适应，换网（校园网/热点）时更稳
+
+proxies:
+  - name: HK-Reality
+    type: vless
+    server: __HK_IP__
+    port: 443
+    uuid: __HK_UUID__
+    network: tcp
+    tls: true
+    udp: true
+    flow: xtls-rprx-vision
+    servername: www.cloudflare.com
+    client-fingerprint: chrome
+    reality-opts:
+      public-key: __HK_REALITY_PUBLIC_KEY__
+      short-id: __HK_REALITY_SHORT_ID__
+
+  - name: HK-Hy2
+    type: hysteria2
+    server: __HK_IP__
+    port: 8443
+    password: __HK_HY2_PASSWORD__
+    sni: bing.com
+    skip-cert-verify: false
+    fingerprint: __HK_HY2_CERT_SHA256__
+    alpn: [h3]
+
+  - name: US-Reality
+    type: vless
+    server: __US_IP__
+    port: 443
+    uuid: __US_UUID__
+    network: tcp
+    tls: true
+    udp: true
+    flow: xtls-rprx-vision
+    servername: www.cloudflare.com
+    client-fingerprint: chrome
+    reality-opts:
+      public-key: __US_REALITY_PUBLIC_KEY__
+      short-id: __US_REALITY_SHORT_ID__
+
+  - name: US-Hy2
+    type: hysteria2
+    server: __US_IP__
+    port: 8443
+    password: __US_HY2_PASSWORD__
+    sni: bing.com
+    skip-cert-verify: false
+    fingerprint: __US_HY2_CERT_SHA256__
+    alpn: [h3]
