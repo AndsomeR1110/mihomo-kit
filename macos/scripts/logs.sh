@@ -1,5 +1,6 @@
 #!/bin/bash
 # 实时查看内核日志（Ctrl+C 退出）。不需要管理员权限。
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 TAIL=50
 [ "$1" = --tail ] && TAIL="$2"

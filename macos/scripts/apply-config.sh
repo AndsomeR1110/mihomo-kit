@@ -1,5 +1,6 @@
 #!/bin/bash
 # 应用修改后的配置：检查 → 留快照 → 重启 → 健康检查；内核起不来就自动退回上一次成功的配置。
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 for a in "$@"; do [ "$a" = --no-pause ] && NO_PAUSE=1; done
 require_root "$@"

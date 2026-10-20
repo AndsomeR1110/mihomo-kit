@@ -1,5 +1,6 @@
 #!/bin/bash
 # 停止并注销 mihomo 守护进程（文件保留）。彻底不用时再删除整个套件目录。
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 for a in "$@"; do [ "$a" = --no-pause ] && NO_PAUSE=1; done
 require_root "$@"

@@ -1,5 +1,6 @@
 #!/bin/bash
 # 检查配置：占位符、证书指纹格式、mihomo -t 语法校验。不需要管理员权限，不影响正在运行的内核。
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 for a in "$@"; do [ "$a" = --no-pause ] && NO_PAUSE=1; done
 start_run_log test-config

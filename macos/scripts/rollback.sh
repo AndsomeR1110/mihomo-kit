@@ -1,5 +1,6 @@
 #!/bin/bash
 # 退回“已知可用”版本（mark-good.command 保存的那一份）并重启。
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 for a in "$@"; do [ "$a" = --no-pause ] && NO_PAUSE=1; done
 require_root "$@"

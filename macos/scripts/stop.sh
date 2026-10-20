@@ -1,5 +1,6 @@
 #!/bin/bash
 # 停止 mihomo 守护进程，恢复直连。下次开机仍会自动启动（如不想自启，用 rescue.command）。
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 for a in "$@"; do [ "$a" = --no-pause ] && NO_PAUSE=1; done
 require_root "$@"

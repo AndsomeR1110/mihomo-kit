@@ -22,6 +22,12 @@ jobs:
           shellcheck --version | head -2
           shellcheck -x -S warning macos/scripts/*.sh macos/*.command \
             macos/menubar/build.sh macos/menubar/*.command .github/ci/*.sh
+      - name: bash 3.2 中文变量陷阱
+        # macOS 自带 bash 3.2 会把紧跟在 $var 后面的中文字节当成变量名的一部分（输出乱码、值丢失），必须写成 ${var}
+        run: |
+          if grep -nP '\$[A-Za-z_][A-Za-z0-9_]*[^\x00-\x7F]' macos/scripts/*.sh macos/menubar/build.sh; then
+            echo '上面这些 $var 后面紧跟中文，请改成 ${var}'; exit 1
+          fi
 
   macos:
     runs-on: macos-latest

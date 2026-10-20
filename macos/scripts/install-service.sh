@@ -1,6 +1,7 @@
 #!/bin/bash
 # 注册并启动 mihomo 守护进程（TUN 接管全部流量）。
 # 前提：已运行 prepare、填好 private 文件、test-config 通过、Clash Verge / ClashX 已完全退出。
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 
 FORCE=0
@@ -13,7 +14,7 @@ start_run_log install-service
 title '1/5 前置检查'
 check_kit_path
 for f in "$MIHOMO_BIN" "$MAC_DIR/launchd/$LABEL.plist" "$MAC_DIR/launchd/$ROTATE_LABEL.plist"; do
-    [ -e "$f" ] || die "缺少 $f，请先运行 prepare.command"
+    [ -e "$f" ] || die "缺少 ${f}，请先运行 prepare.command"
 done
 ok '程序文件齐全'
 
@@ -78,7 +79,7 @@ trace "$PROBE_DEFAULT"
 info "默认出口：ip=$TRACE_IP loc=$TRACE_LOC"
 trace "$PROBE_AI"
 if [ "$TRACE_LOC" = US ]; then ok "AI 出口：ip=$TRACE_IP loc=US"
-else warn "AI 出口：ip=$TRACE_IP loc=$TRACE_LOC（应为 US，请在面板检查美国组）"; fi
+else warn "AI 出口：ip=$TRACE_IP loc=${TRACE_LOC}（应为 US，请在面板检查美国组）"; fi
 
 echo ''
 ok "完成。面板：$(api_base)/ui （后端地址 $(api_base)，密钥见 config.yaml 的 secret）"

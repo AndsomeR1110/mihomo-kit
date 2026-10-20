@@ -4,6 +4,7 @@
 #   bash build.sh --uninstall   卸载：菜单栏图标、登录自启、免密授权（内核不受影响）
 #   --no-sudoers                不写免密授权（每次启停弹系统密码框）
 #   --no-pause                  结束时不等回车
+# shellcheck source=../scripts/common.sh
 . "$(cd "$(dirname "$0")" && pwd)/../scripts/common.sh"
 
 UNINSTALL=0; NO_SUDOERS=0
@@ -51,7 +52,7 @@ if [ "$UNINSTALL" = 1 ]; then
     if [ -e "$SUDOERS_FILE" ]; then
         info '撤销免密启停授权需要管理员权限：请输入本机登录密码（输入时不显示）'
         if /usr/bin/sudo rm -f "$SUDOERS_FILE"; then ok '已撤销免密启停授权'
-        else warn "没能删除 $SUDOERS_FILE，可稍后手动删除"; fi
+        else warn "没能删除 ${SUDOERS_FILE}，可稍后手动删除"; fi
     fi
     info '内核守护进程不受影响；需要时用 stop.command / uninstall-service.command'
     exit 0
@@ -61,7 +62,7 @@ title '1/5 检查环境'
 major="$(sw_vers -productVersion | cut -d. -f1)"
 [ "${major:-0}" -ge 12 ] || die "需要 macOS 12 或更新版本（当前 $(sw_vers -productVersion)）"
 check_kit_path
-[ -f "$CONFIG_FILE" ] || die "找不到 $CONFIG_FILE，请确认 macos 文件夹在套件根目录下"
+[ -f "$CONFIG_FILE" ] || die "找不到 ${CONFIG_FILE}，请确认 macos 文件夹在套件根目录下"
 if ! xcrun --find swiftc >/dev/null 2>&1; then
     fail '没有找到 Swift 编译器（Xcode 命令行工具）'
     info '系统会弹出安装窗口（几百 MB），装完后重新双击 menubar/install.command 即可。'
@@ -86,7 +87,7 @@ plutil -lint -s "$BUILD_DIR/MihomoBar.app/Contents/Info.plist" || die 'Info.plis
 sips -s format icns "$ROOT/panel-icon.ico" --out "$BUILD_DIR/MihomoBar.app/Contents/Resources/AppIcon.icns" \
     >/dev/null 2>&1 || warn '程序图标转换失败（不影响使用）'
 codesign --force --sign - "$BUILD_DIR/MihomoBar.app" >/dev/null 2>&1 || warn '本机签名失败（一般不影响使用）'
-ok "已编译（$ARCH）"
+ok "已编译（${ARCH}）"
 
 title '3/5 免密启停授权'
 if [ "$NO_SUDOERS" = 1 ]; then
@@ -108,7 +109,7 @@ else
        /usr/bin/sudo mkdir -p /etc/sudoers.d &&
        /usr/bin/sudo install -m 0440 -o root -g wheel "$TMP/sudoers" "$SUDOERS_FILE" &&
        sudoers_ok; then
-        ok "已授权（$SUDOERS_FILE）"
+        ok "已授权（${SUDOERS_FILE}）"
     else
         /usr/bin/sudo rm -f "$SUDOERS_FILE" 2>/dev/null
         warn '授权没有成功：菜单栏仍可用，启停时会弹系统密码框'

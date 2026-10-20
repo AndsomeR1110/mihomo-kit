@@ -1,5 +1,6 @@
 #!/bin/bash
 # 重启 mihomo 守护进程（不改配置）。适合网络异常时“重开一下”。
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 for a in "$@"; do [ "$a" = --no-pause ] && NO_PAUSE=1; done
 require_root "$@"

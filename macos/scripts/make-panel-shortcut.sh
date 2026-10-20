@@ -1,6 +1,7 @@
 #!/bin/bash
 # 在桌面创建「mihomo 面板」快捷方式（.webloc 免密自动登录 + 套件自带图标）
 # 面板密钥从 config.yaml 的 secret 读取；--dest 目录 供测试用
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 DEST=''
 while [ $# -gt 0 ]; do

@@ -134,7 +134,7 @@ check_kit_path() {
     case "$ROOT" in
         *[[:space:]]*) die "目录路径里有空格：$ROOT
   请把整个文件夹移到没有空格的路径（例如 ~/mihomo）后重试" ;;
-        *[\'\"\\\$\`\&\<\>\|\;\*\?]*) die "目录路径里有特殊字符：$ROOT（请改成纯英文路径，例如 ~/mihomo）" ;;
+        *[\'\"\\\$\`\&\<\>\|\;\*\?]*) die "目录路径里有特殊字符：${ROOT}（请改成纯英文路径，例如 ~/mihomo）" ;;
     esac
     home="$(real_home)"
     if [ -n "$home" ]; then
@@ -149,7 +149,7 @@ check_kit_path() {
         /Volumes/*) warn "套件在外置磁盘上：开机时磁盘没挂载会导致内核起不来，建议放到 ~/mihomo" ;;
     esac
     if printf '%s' "$ROOT" | LC_ALL=C grep -q '[^ -~]'; then
-        warn "目录路径里有中文：$ROOT（一般可用，遇到问题就改成纯英文路径）"
+        warn "目录路径里有中文：${ROOT}（一般可用，遇到问题就改成纯英文路径）"
     fi
     return 0
 }

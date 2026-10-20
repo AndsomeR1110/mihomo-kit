@@ -2,6 +2,7 @@
 # 准备：下载内核 / 面板 / 规则集、生成面板密钥、建立私有文件模板
 # 不改变当前上网方式，不需要管理员权限。优先走 gh-proxy.com 镜像，失败回退直连；
 # 可用 --proxy http://127.0.0.1:7890 指定现有代理加速下载
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 
 PROXY=''
@@ -53,7 +54,7 @@ title '1/6 创建目录'
 mkdir -p "$BIN_DIR" "$PRIV_DIR" "$CONF_DIR/ruleset" "$CONF_DIR/ui" "$LOG_DIR" "$BACKUP_DIR" || die "无法在 $ROOT 下创建目录"
 ok "$ROOT"
 
-title "2/6 内核 mihomo $KERNEL_VER（darwin-$ARCH）"
+title "2/6 内核 mihomo ${KERNEL_VER}（darwin-${ARCH}）"
 if [ -x "$MIHOMO_BIN" ] && [ "$FORCE" != 1 ]; then
     ok '已存在 bin/mihomo（加 --force 可覆盖）'
 elif get_file "$KERNEL_URL" "$TMP/mihomo.gz"; then

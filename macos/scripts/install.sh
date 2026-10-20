@@ -6,6 +6,7 @@
 #   --no-shortcut   无人值守也不要快捷方式
 #   --apply-tweaks  无人值守也关闭 IPv6
 #   --proxy URL     下载走指定代理，如 http://127.0.0.1:7890
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 
 YES=0; NO_SHORTCUT=0; APPLY_TWEAKS=0; DRY_RUN=0; PROXY=''
@@ -53,7 +54,7 @@ prep_args=(--no-pause)
 [ -n "$PROXY" ] && prep_args+=(--proxy "$PROXY")
 run_as_user /bin/bash "$SCRIPT_DIR/prepare.sh" "${prep_args[@]}"
 for f in "$MIHOMO_BIN" "$CONF_DIR/ui/index.html"; do
-    [ -e "$f" ] || die "缺少 $f，下载没有完成。请检查网络后重试 install.command"
+    [ -e "$f" ] || die "缺少 ${f}，下载没有完成。请检查网络后重试 install.command"
 done
 for n in private-domain anthropic ai cn-domain global-domain cn-ip; do
     [ -s "$CONF_DIR/ruleset/$n.mrs" ] || die "缺少 ruleset/$n.mrs，请重试 install.command"

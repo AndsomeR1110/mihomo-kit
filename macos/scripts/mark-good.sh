@@ -1,5 +1,6 @@
 #!/bin/bash
 # 把当前配置保存为“已知可用”版本（rollback.command 会退回到这里）。不需要管理员权限。
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 for a in "$@"; do [ "$a" = --no-pause ] && NO_PAUSE=1; done
 start_run_log mark-good

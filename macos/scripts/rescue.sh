@@ -1,6 +1,7 @@
 #!/bin/bash
 # 恢复联网（面板打不开、网络全断时用）
 # 停止 mihomo 并取消开机自启、关闭残留的系统代理、刷新 DNS，然后测试直连。
+# shellcheck source=common.sh
 . "$(dirname "$0")/common.sh"
 for a in "$@"; do [ "$a" = --no-pause ] && NO_PAUSE=1; done
 require_root "$@"
@@ -28,7 +29,7 @@ probe 'https://www.baidu.com' '' 8
 if [ "$PROBE_CODE" = 200 ]; then
     ok '直连正常（百度可访问）'
 else
-    warn "直连仍不通（HTTP $PROBE_CODE）。可能需要重新登录校园网，或检查 Wi-Fi 本身"
+    warn "直连仍不通（HTTP ${PROBE_CODE}）。可能需要重新登录校园网，或检查 Wi-Fi 本身"
     info '如果之前关闭过 IPv6，也可以双击 system-tweaks-revert.command 排除 IPv6 设置的影响'
 fi
 echo ''
