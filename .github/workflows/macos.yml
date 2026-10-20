@@ -1,0 +1,112 @@
+# macOS 版自检：脚本静态检查 + 在真实 macOS 上编译菜单栏程序、跑通守护进程的装/启/停/回滚/急救/卸载。
+# 冒烟测试用假节点并关闭 TUN（只开 mixed-port），不会接管 runner 的网络。
+name: macOS
+
+on:
+  push:
+    paths: ['macos/**', 'config/**', '.github/**']
+  pull_request:
+    paths: ['macos/**', 'config/**', '.github/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          shellcheck --version | head -2
+          shellcheck -x -S warning macos/scripts/*.sh macos/*.command \
+            macos/menubar/build.sh macos/menubar/*.command .github/ci/*.sh
+
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 模板格式（plist）
+        run: plutil -lint macos/launchd/*.plist macos/menubar/Info.plist
+
+      - name: 编译菜单栏程序（arm64 + x86_64，最低 macOS 12）
+        run: |
+          sw_vers
+          xcrun swiftc --version
+          for arch in arm64 x86_64; do
+            xcrun swiftc -O -target "$arch-apple-macos12.0" -o "/tmp/MihomoBar-$arch" macos/menubar/MihomoBar.swift
+            file "/tmp/MihomoBar-$arch"
+          done
+
+      - name: prepare（下载内核 / 面板 / 规则集）
+        run: bash macos/scripts/prepare.sh --no-pause; test -x bin/mihomo
+
+      - name: test-config（假节点）
+        run: |
+          bash .github/ci/fill-dummy-private.sh
+          bash macos/scripts/test-config.sh --no-pause
+
+      - name: install --dry-run
+        run: sudo bash macos/scripts/install.sh --yes --dry-run --no-pause
+
+      - name: 冒烟测试：守护进程（关闭 TUN）
+        run: |
+          set -x
+          sed -i '' '/^tun:/,/^[^ ]/ s/^  enable: true/  enable: false/' config/config.yaml
+          grep -A1 '^tun:' config/config.yaml
+
+          sudo bash macos/scripts/install-service.sh --no-pause
+          # 普通用户能读 system 域的状态（菜单栏程序依赖这一点）
+          launchctl print system/com.mihomo-kit.mihomo | grep -E $'^\t(state|pid) = '
+          launchctl print system/com.mihomo-kit.mihomo | grep -q $'^\tstate = running'
+          launchctl print system/com.mihomo-kit.logrotate >/dev/null
+          bash macos/scripts/status.sh --no-pause
+
+          # root 跑过之后，普通用户脚本仍能写 backup/ 与 logs/scripts/
+          bash macos/scripts/mark-good.sh --no-pause
+          test -f backup/last-good/marked-at.txt
+
+          sudo bash macos/scripts/restart.sh --no-pause
+          sudo bash macos/scripts/apply-config.sh --no-pause
+          sudo bash macos/scripts/rollback.sh --no-pause
+
+          sudo bash macos/scripts/stop.sh --no-pause
+          ! launchctl print system/com.mihomo-kit.mihomo >/dev/null 2>&1 || exit 1
+          ! curl -s -m 2 --noproxy '*' http://127.0.0.1:9097/version || exit 1
+
+          sudo bash macos/scripts/start.sh --no-pause
+          curl -s -m 2 --noproxy '*' -H "Authorization: Bearer $(sed -n 's/^secret: *"\{0,1\}\([0-9a-f]*\).*/\1/p' config/config.yaml)" http://127.0.0.1:9097/version
+
+          sudo bash macos/scripts/rescue.sh --no-pause
+          launchctl print-disabled system | grep -E '"com.mihomo-kit.mihomo" => (true|disabled)'
+          sudo bash macos/scripts/start.sh --no-pause
+          ! launchctl print-disabled system | grep -E '"com.mihomo-kit.mihomo" => (true|disabled)' || exit 1
+
+      - name: 菜单栏程序：编译部署并保持运行
+        run: |
+          bash macos/menubar/build.sh --no-pause
+          test -x macos/menubar/MihomoBar.app/Contents/MacOS/MihomoBar
+          plutil -p macos/menubar/MihomoBar.app/Contents/Info.plist | grep MihomoKitRoot
+          sleep 8
+          pgrep -x MihomoBar
+          cat ~/Library/Logs/mihomo-menubar.log 2>/dev/null || true
+          bash macos/menubar/build.sh --uninstall --no-pause
+          ! pgrep -x MihomoBar || exit 1
+          test ! -e ~/Library/LaunchAgents/com.mihomo-kit.menubar.plist
+
+      - name: 卸载
+        run: |
+          sudo bash macos/scripts/uninstall-service.sh --no-pause
+          test ! -e /Library/LaunchDaemons/com.mihomo-kit.mihomo.plist
+          test ! -e /Library/LaunchDaemons/com.mihomo-kit.logrotate.plist
+          ! launchctl print system/com.mihomo-kit.mihomo >/dev/null 2>&1 || exit 1
+
+      - name: 失败时的现场
+        if: failure()
+        run: |
+          tail -n 80 logs/mihomo.out.log 2>/dev/null || true
+          for f in logs/scripts/*.log; do echo "=== $f"; tail -n 40 "$f"; done 2>/dev/null || true
+          sudo launchctl print system/com.mihomo-kit.mihomo 2>&1 | head -40 || true

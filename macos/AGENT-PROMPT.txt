@@ -1,0 +1,20 @@
+请帮我把 mihomo 代理套件装到这台 Mac 上，按下面的步骤来：
+
+1. 把 https://github.com/AndsomeR1110/mihomo-kit 下载到 ~/mihomo（git clone 或下载 ZIP 都行；
+   GitHub 连不上就在完整地址前面加 https://gh-proxy.com/ 前缀走镜像）。
+   不要放在桌面、文稿、下载或 iCloud 里。ZIP 解压的话先执行 xattr -dr com.apple.quarantine ~/mihomo
+2. 我手里有分享者给我的 nodes.yaml 和 infra-direct.yaml 两个文件，把它们放进
+   ~/mihomo/config/private/ 。如果我说还没有这两个文件，先停下来提醒我去找分享者要，
+   不要用模板编。
+3. 运行 bash ~/mihomo/macos/scripts/install.sh，会要开机密码（我本人来输），随后有两个问题：
+   - 桌面「mihomo 面板」快捷方式 → 选 Y
+   - 关闭各网络服务的 IPv6 → 我在校园网环境，选 Y
+4. 再运行 bash ~/mihomo/macos/menubar/build.sh（不要加 sudo）装菜单栏图标；
+   提示缺 Xcode 命令行工具就让我点安装，装完重跑。中途要密码时我来输。
+5. 装完运行 bash ~/mihomo/macos/scripts/status.sh --no-pause 验收：守护进程 Running、
+   默认出口有 ip/loc、AI 出口 claude.ai loc=US，把结果给我看。
+6. 有问题按仓库里的 macos/AGENT-INSTALL.md 和 macos/README.md 排查；实在不行运行
+   macos/rescue.command 恢复直连，然后告诉我卡在哪一步。
+
+注意：config/private/ 里的文件是凭据，不要查看、修改或外传；也不要动我电脑上
+其他代理软件（Clash Verge / ClashX 之类装完前我会自己退出）。

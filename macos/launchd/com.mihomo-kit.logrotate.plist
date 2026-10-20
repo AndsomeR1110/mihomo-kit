@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  内核日志滚动（相当于 WinSW 的 roll-by-size：超过 5 MB 滚动，保留 5 份）。每 10 分钟检查一次。
+  launchd 以追加方式写日志，所以“复制一份再清空原文件”不会丢内核的后续输出。
+  模板：install-service 把 __KIT_ROOT__ 换成套件目录后装到 /Library/LaunchDaemons/。
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.mihomo-kit.logrotate</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/sh</string>
+        <string>-c</string>
+        <string>f="__KIT_ROOT__/logs/mihomo.out.log"; [ -f "$f" ] || exit 0; [ "$(stat -f %z "$f")" -gt 5242880 ] || exit 0; rm -f "$f.5"; for i in 4 3 2 1; do if [ -f "$f.$i" ]; then mv -f "$f.$i" "$f.$((i + 1))"; fi; done; cp -p "$f" "$f.1" &amp;&amp; : &gt; "$f"</string>
+    </array>
+    <key>StartInterval</key>
+    <integer>600</integer>
+</dict>
+</plist>
