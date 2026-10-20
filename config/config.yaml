@@ -174,6 +174,15 @@ rules:
   - MATCH,默认出口
 
 # ---------- DNS ----------
+# 下面这一段的「dns:」整体由托盘右键的「DNS 覆写」开关管理，同一开关还会改本文件底部的
+# tun.strict-route —— 两处必须成套，不要只手改一处：
+#   on  = 全量防 DNS 泄露（所有域名用非大陆 DNS，查询经「美国组」隧道）+ strict-route: true
+#        → config\dns\on.yaml
+#   off = 基线（全部用国内公共 DNS，最快）+ strict-route: false
+#        → config\dns\off.yaml
+# 改这两份方案文件即可调整两种模式；不要手改标记之间的内容（会被覆盖）。
+# 命令行：dns-override.cmd -State on|off|toggle|get
+# >>> dns-override >>>
 dns:
   enable: true
   ipv6: false
@@ -208,6 +217,7 @@ dns:
     - https://223.5.5.5/dns-query
   direct-nameserver:          # 直连流量用当前网络自己的 DNS，换网后自动跟随
     - system
+# <<< dns-override <<<
 
 # ---------- 域名嗅探 ----------
 # 即使应用绕开了本地 DNS（如浏览器自带 DoH），也能从 TLS/HTTP 里识别出域名，
@@ -232,7 +242,9 @@ tun:
   device: Mihomo
   auto-route: true
   auto-detect-interface: true # 换网（学校/宿舍/热点）后自动跟随新网卡
-  strict-route: false         # 换网友好；IPv6 泄漏已由系统层关闭 IPv6 解决
+  # 由「DNS 覆写」开关统一管理：开启时为 true（配合非大陆 DNS，抑制多网卡 DNS 泄露），
+  # 关闭时为 false。不要单独手改这一行，否则会与 dns: 段不配套（托盘会显示「配置与方案不一致」）。
+  strict-route: false
   dns-hijack:
     - any:53
     - tcp://any:53
