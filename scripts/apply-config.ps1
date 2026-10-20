@@ -46,8 +46,22 @@ try {
     if (Test-Egress) { Write-Ok '默认出口连通' }
     else { Write-Warn2 '默认出口不通。若是新配置导致的，运行 rollback.cmd 退回“已知可用”版本' }
     $u = Get-Trace $ProbeAI
-    if ($u.Loc -eq 'US') { Write-Ok 'AI 出口为美国' }
+    if ($u.Loc -eq 'US') { Write-Ok ("AI 出口为美国（ip={0}）" -f $u.Ip) }
     else { Write-Warn2 ("AI 出口检查：ip={0} loc={1}" -f $u.Ip, $u.Loc) }
+    Write-Info '注意：出口地区只说明业务流量走了哪条隧道，与 DNS 是否泄露无关。'
+    Write-Info '      要确认 DNS，请看 dns-override.cmd -State get 的状态，或按 README 的验收步骤实测。'
+
+    # 顺带核对 DNS 覆写与严格路由是否仍然配套（改配置时容易把 tun.strict-route 改回去）
+    $dns = Get-DnsOverrideStatus
+    if ($dns.Scheme -in @('on', 'off')) {
+        if ($dns.DiskMatches -and $dns.Applied) {
+            Write-Ok ("DNS 覆写：{0}，且 tun.strict-route={1} 已生效" -f $dns.Scheme, $dns.RuntimeStrictRoute)
+        } else {
+            Write-Warn2 ("DNS 覆写：{0}，但运行时状态不符（磁盘 strict-route={1}，运行时={2}）" -f `
+                $dns.Scheme, $dns.DiskStrictRoute, $dns.RuntimeStrictRoute)
+            Write-Info '      运行 dns-override.cmd -State on|off 可把 DNS 段与严格路由重新写成一套'
+        }
+    }
     Write-Info '新配置稳定用几天后，运行 mark-good.cmd 把它保存为“已知可用”版本'
 }
 catch { Write-Fail $_.Exception.Message }

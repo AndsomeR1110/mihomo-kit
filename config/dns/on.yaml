@@ -1,0 +1,67 @@
+# DNS 覆写 · 开启（全量防 DNS 泄露）
+#
+# 目标：本机所有域名解析，一律经代理隧道送到指定的非大陆 DNS；
+#       本地 ISP / 校园网 / 路由器只看得到一串到 VPS 的加密流量，看不到域名。
+#
+# 与旧版「只把境外域名送出去」的方案不同，本方案不再保留任何例外：
+#   · 国内域名（cn-domain 规则集）也不再走国内 DNS —— 否则国内域名仍会泄露给本地网络；
+#   · 校园网门户（xjtlu.edu.cn）、联网检测、自有基础设施（自有域名等）同样走代理 DNS。
+#     代价：只能由校园网内部 DNS 解析的域名会因此无法访问；代理节点全挂时，
+#     这些域名也一并解析失败。需要「登录前也能解析校园网门户」的场景，请关闭本开关。
+#
+# 本文件从 `dns:` 那一行起的内容会被 scripts\dns-override.ps1 / 托盘原样插入
+# config\config.yaml 的「>>> dns-override >>>」标记之间；同一开关还会把顶层
+# tun.strict-route 一起设为 true。想调整策略，改这里。
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter-mode: blacklist
+  fake-ip-filter:             # 这些域名返回真实 IP（不参与 fake-ip）
+    - "rule-set:private-domain"
+    - "rule-set:infra-direct"
+    - "+.lan"
+    - "+.local"
+    - "+.xjtlu.edu.cn"
+    - "+.msftconnecttest.com"
+    - "+.msftncsi.com"
+    - "time.windows.com"
+    - "+.ntp.org"
+    - "stun.*.*"
+    - "stun.*.*.*"
+    - "localhost.ptlogin2.qq.com"
+  use-system-hosts: false
+
+  # DNS 查询也走规则（#出口 后缀才生效）。注意：这里不再有 nameserver-policy，
+  # 因为本方案不给任何域名留「用国内 DNS / 用系统 DNS」的例外。
+  respect-rules: true
+
+  # 引导解析：只用于解析下面那些 DoH 服务器的主机名。
+  # 本方案全部 DoH 地址都写成 IP 形式，正常情况下不会触发任何解析请求。
+  default-nameserver:
+    - https://1.1.1.1/dns-query
+    - https://8.8.8.8/dns-query
+
+  # 所有未另行指定的域名，包括国内域名、未知域名、境外域名，一律用非大陆 DNS，
+  # 且查询本身经「美国组」的代理隧道发出。
+  #
+  # 为什么固定用「美国组」而不是「默认出口」：默认出口是可以被手动选成 DIRECT 的，
+  # 那样 DNS 查询就会变成直连（泄露）。美国组只装 US- 节点、empty-fallback 为 REJECT，
+  # 不会选择也不会回落到 DIRECT，出口是确定的。
+  nameserver:
+    - "https://1.1.1.1/dns-query#美国组"
+    - "https://8.8.8.8/dns-query#美国组"
+
+  # 即使某条业务连接最终走 DIRECT，它的域名解析仍然经美国组（否则国内域名会泄露）。
+  direct-nameserver:
+    - "https://1.1.1.1/dns-query#美国组"
+    - "https://8.8.8.8/dns-query#美国组"
+
+  # 解析「代理节点自己的域名」时用的 DNS。当前四个节点的 server 都是 IP 字面量，
+  # 不需要先解析节点域名，因此这里不会形成「要连代理得先解析代理域名」的死锁。
+  # 以后若加入域名形式的节点（如 hk.example.com），必须重新设计这一项，
+  # 不能直接沿用本文件，也不能恢复国内 DNS。
+  proxy-server-nameserver:
+    - "https://1.1.1.1/dns-query#美国组"
+    - "https://8.8.8.8/dns-query#美国组"

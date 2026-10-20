@@ -104,7 +104,7 @@ if ($Commit) {
     Push-Location $rootDir
     try {
         git add -- tray/MihomoTray.cs tray/MihomoTray.manifest tray/build.ps1 tray/README.md tray/.gitignore
-        git commit -m 'tray v3: compiled C# tray (PerMonitorV2 DPI, compact dark menu, exit node)'
+        git commit -m 'tray v4: proxy mode switcher + DNS override toggle'
     }
     finally { Pop-Location }
 }

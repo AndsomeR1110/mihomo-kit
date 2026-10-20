@@ -1,0 +1,44 @@
+# DNS 覆写 · 关闭（基线）
+#
+# 与套件出厂时的 DNS 行为一致：
+#   · 全部域名用国内公共 DNS（阿里 / DNSPod）解析，境外域名也不例外
+#   · 直连流量用当前网络自己的 DNS
+# 优点是最快、最省事；缺点是境外域名的查询会明文发给国内 DNS，
+# 存在 DNS 泄露（ISP / 公共 DNS 能看到你在访问哪些境外站点）。
+#
+# 本文件的内容会被 scripts\dns-override.ps1 原样插入 config\config.yaml 的
+# 「>>> dns-override >>>」标记之间。想改基线行为，直接改这里。
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  fake-ip-filter-mode: blacklist
+  fake-ip-filter:             # 这些域名返回真实 IP
+    - "rule-set:private-domain"
+    - "rule-set:infra-direct"
+    - "+.lan"
+    - "+.local"
+    - "+.xjtlu.edu.cn"
+    - "+.msftconnecttest.com"
+    - "+.msftncsi.com"
+    - "time.windows.com"
+    - "+.ntp.org"
+    - "stun.*.*"
+    - "stun.*.*.*"
+    - "localhost.ptlogin2.qq.com"
+  use-system-hosts: false
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  nameserver:
+    - https://223.5.5.5/dns-query
+    - https://1.12.12.12/dns-query
+  nameserver-policy:          # 校园网门户和联网检测用当前网络自己的 DNS（登录前也能解析）
+    "+.xjtlu.edu.cn": system
+    "+.msftconnecttest.com": system
+    "+.msftncsi.com": system
+  proxy-server-nameserver:
+    - https://223.5.5.5/dns-query
+  direct-nameserver:          # 直连流量用当前网络自己的 DNS，换网后自动跟随
+    - system
