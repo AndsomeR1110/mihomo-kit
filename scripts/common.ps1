@@ -3,6 +3,12 @@
 
 $ErrorActionPreference = 'Stop'
 
+# 控制台统一 UTF-8：新开的窗口代码页是 GBK(936)，curl 等外部程序的 UTF-8 输出会被按 GBK 解成乱码
+try {
+    [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+    $OutputEncoding = [Console]::OutputEncoding
+} catch { }
+
 $Root        = Split-Path -Parent $PSScriptRoot
 $BinDir      = Join-Path $Root 'bin'
 $ConfDir     = Join-Path $Root 'config'
@@ -118,8 +124,16 @@ function Get-MixedPort { return [int](Get-ConfigValue 'mixed-port' '7897') }
 function Invoke-Api {
     param([string]$Path, [string]$Method = 'GET', [int]$TimeoutSec = 3)
     $headers = @{ Authorization = 'Bearer ' + (Get-ApiSecret) }
-    return Invoke-RestMethod -Uri ((Get-ApiBase) + $Path) -Headers $headers -Method $Method `
+    # PS5.1 对不带 charset 的 JSON 响应按 ISO-8859-1 解码，中文会乱（“美国组”→“ç¾…”）；按字节还原后统一按 UTF-8 解
+    $resp = Invoke-WebRequest -Uri ((Get-ApiBase) + $Path) -Headers $headers -Method $Method `
         -TimeoutSec $TimeoutSec -UseBasicParsing
+    if ($resp.Content -is [byte[]]) {
+        $text = [Text.Encoding]::UTF8.GetString($resp.Content)
+    } else {
+        $text = [Text.Encoding]::UTF8.GetString([Text.Encoding]::GetEncoding(28591).GetBytes($resp.Content))
+    }
+    if ([string]::IsNullOrWhiteSpace($text)) { return $null }
+    return $text | ConvertFrom-Json
 }
 
 function Wait-Api([int]$TimeoutSec = 25) {
