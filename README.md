@@ -6,7 +6,10 @@
 ## 你需要准备
 
 - Windows 10/11（64 位），有管理员权限
-- 分享者给你的两个文件：`nodes.yaml` 和 `infra-direct.yaml`（**这是凭据，别外传**）
+- 分享者给你的节点凭据，二选一：
+  - **订阅链接**（推荐）：把链接单独一行存为 `config\private\subscription.txt`（记事本新建、粘贴链接、保存即可）
+  - 两个文件：`nodes.yaml` 和 `infra-direct.yaml` → 放进 `config\private\`
+  - 以上都是**凭据，别外传**
 - 电脑上已有的代理软件（Clash Verge 等）需先退出——两者不能同时用，安装器会检测
 
 ## 安装（三选一）
@@ -14,7 +17,7 @@
 ### 方式 A：拿到离线压缩包（最简单，推荐）
 
 1. 解压到**没有空格的英文路径**，比如 `C:\mihomo` 或 `D:\mihomo`
-2. 把 `nodes.yaml`、`infra-direct.yaml` 放进 `config\private\`
+2. 把订阅链接存为 `config\private\subscription.txt`（或把 `nodes.yaml`、`infra-direct.yaml` 放进 `config\private\`）
 3. 双击 `install.cmd`，按提示走（会弹 UAC 提权）
 4. 完成——桌面会有「mihomo 面板」快捷方式（安装时选 Y 即可，免密直达）
 
@@ -40,8 +43,10 @@ git clone https://github.com/AndsomeR1110/mihomo-kit C:\mihomo
 
 | 文件 | 作用 | 需要管理员 |
 | --- | --- | --- |
-| `status.cmd` | 服务状态、内存、当前出口、节点延迟、出口实测、最近日志 | 否 |
+| `status.cmd` | 套件版本、服务状态、内存、当前出口、节点延迟、出口实测、最近日志 | 否 |
 | `panel.cmd` | 打开面板（自动带密钥，免登录） | 否 |
+| `doctor.cmd` | **一键诊断**：全部检查汇总成 `doctor-report-*.txt`，发给分享者即可远程排障 | 否 |
+| `update.cmd` | **一键升级**脚本与文档（你的配置/节点/日志都不动；也可加 `-CheckOnly` 只查不升） | 否 |
 | `logs.cmd` | 实时看内核日志（Ctrl+C 退出） | 否 |
 | `start.cmd` / `stop.cmd` / `restart.cmd` | 启动 / 停止 / 重启服务 | 是 |
 | `rescue.cmd` | **断网急救**：停服务、关残留系统代理、刷新 DNS、测直连 | 是 |
@@ -93,11 +98,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File <套件目录>\tray\build.ps
 
 ## 故障排查
 
+**第一步永远是双击 `doctor.cmd`**——它把所有检查汇总成 `doctor-report-*.txt`（在套件目录里），把这份文件发给分享者就能远程排障。
+
 | 症状 | 处理 |
 | --- | --- |
 | 完全断网 | 双击 `rescue.cmd` 恢复直连，再排查 |
 | 面板「后端连不上」 | 后端端口应为 **9097**（不是 9090）；确认 `status.cmd` 里服务在 Running |
 | AI 网站打不开 | `status.cmd` 看「AI 出口」是否 loc=US；美国组两个节点都挂时会按设计直接断（不回落） |
+| AI 网站反复弹人机验证 | 面板里看该分组是否为「自动测速」——自动组会换 IP，把组钉到固定节点即可 |
 | 下载失败（首次安装） | 重跑 `install.cmd`，已下载的不会重复；GitHub 不通会自动走 gh-proxy.com 镜像 |
 | 日志 | `logs.cmd` 实时；历史在 `logs\mihomo-service.out.log` 与 `logs\scripts\` |
 

@@ -4,6 +4,9 @@ param([int]$LogLines = 20, [switch]$NoPause)
 Start-RunLog 'status'
 
 try {
+    Write-Title '版本'
+    Write-Info ("套件 {0}　（update.cmd 检查升级，doctor.cmd 一键诊断）" -f (Get-KitVersion))
+
     Write-Title '服务'
     $svc = Get-MihomoService
     if (-not $svc) {

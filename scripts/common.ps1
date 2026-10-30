@@ -24,8 +24,32 @@ $WinSWExe    = Join-Path $BinDir 'mihomo-service.exe'
 $ConfigFile  = Join-Path $ConfDir 'config.yaml'
 $ServiceName = 'mihomo'
 
-# 需要一起备份/回滚的文件（相对 config 目录）
-$ManagedFiles = @('config.yaml', 'private\nodes.yaml', 'private\infra-direct.yaml')
+# ---------- 版本 ----------
+$VersionFile = Join-Path $Root 'VERSION'
+function Get-KitVersion {
+    try {
+        if (Test-Path $VersionFile) { return ([IO.File]::ReadAllText($VersionFile, [Text.Encoding]::UTF8)).Trim() }
+    } catch { }
+    return 'unknown'
+}
+
+# ---------- 订阅模式 ----------
+# config\private\subscription.txt 里放一行订阅链接（https://…）即进入订阅模式：
+# 节点改为在线订阅拉取，不再需要 nodes.yaml（面板分发的 token 订阅即用此方式）
+$SubscriptionFile = Join-Path $PrivDir 'subscription.txt'
+function Test-SubscriptionMode {
+    if (-not (Test-Path $SubscriptionFile)) { return $false }
+    try { return (([IO.File]::ReadAllText($SubscriptionFile, [Text.Encoding]::UTF8)).Trim() -match '^https?://') } catch { return $false }
+}
+function Get-SubscriptionUrl { return ([IO.File]::ReadAllText($SubscriptionFile, [Text.Encoding]::UTF8)).Trim() }
+
+# 需要一起备份/回滚的文件（相对 config 目录）；订阅模式下 nodes.yaml 换成 subscription.txt
+function Get-ManagedFiles {
+    $f = @('config.yaml', 'private\infra-direct.yaml')
+    if (Test-SubscriptionMode) { $f += 'private\subscription.txt' }
+    else { $f += 'private\nodes.yaml' }
+    return $f
+}
 
 # 出口实测地址
 $ProbeDirect  = 'https://myip.ipip.net'                    # 国内直连，返回本机直连 IP
@@ -231,13 +255,64 @@ function Disable-SystemProxy {
 # ---------- 配置检查 ----------
 function Get-Placeholders {
     $found = @()
-    foreach ($rel in $ManagedFiles) {
+    foreach ($rel in (Get-ManagedFiles)) {
         $path = Join-Path $ConfDir $rel
         if (-not (Test-Path $path)) { $found += "缺少文件 config\$rel"; continue }
         $text = [IO.File]::ReadAllText($path, [Text.Encoding]::UTF8)
         foreach ($m in [regex]::Matches($text, '__[A-Z0-9_]+__')) { $found += "config\$rel 中仍有占位符 $($m.Value)" }
     }
     return $found
+}
+
+# ---------- 订阅模式：改写 config.yaml ----------
+# 直连拉一次订阅，提取节点名列表（拉不到返回 $null）
+function Get-SubscriptionNodeNames([string]$Url, [int]$TimeoutSec = 25) {
+    $r = Invoke-Native 'curl.exe' @('-sL', '--max-time', "$TimeoutSec", $Url)
+    if ($r.ExitCode -ne 0) { return $null }
+    $names = @()
+    foreach ($m in [regex]::Matches(($r.Output -join "`n"), '(?m)^\s*-\s*name:\s*["'']?(.+?)["'']?\s*$')) {
+        $names += $m.Groups[1].Value.Trim()
+    }
+    return $names
+}
+
+# 把 config.yaml 的 nodes provider 换成在线订阅（file → http），并按订阅节点名有无 HK-/US- 前缀决定是否去掉分组 filter
+function Enable-SubscriptionProvider {
+    $url = Get-SubscriptionUrl
+    $text = Get-ConfigText
+
+    # 已经是订阅型且 URL 一致 → 无需改写
+    if ($text -match ('(?m)^    url: "' + [regex]::Escape($url) + '"')) { return 'already' }
+
+    $nl = "`r`n"
+    if ($text -match '(?m)^  nodes:\r?\n    type: file\r?\n    path: \./private/nodes\.yaml\r?\n') {
+        $newBlock = '  nodes:' + $nl + '    type: http' + $nl + '    url: "' + $url + '"' + $nl +
+                    '    interval: 86400' + $nl + '    path: ./private/subscription-cache.yaml' + $nl
+        $text = [regex]::Replace($text, '(?m)^  nodes:\r?\n    type: file\r?\n    path: \./private/nodes\.yaml\r?\n', { param($m) $newBlock })
+    }
+    elseif ($text -match '(?m)^  nodes:\r?\n    type: http\r?\n') {
+        # 订阅型但 URL 变了（换 token / 换面板）→ 只换 URL 行
+        $text = [regex]::Replace($text, '(?m)^    url: "[^"]*"$', '    url: "' + $url + '"')
+    }
+    else {
+        throw 'config.yaml 的 proxy-providers.nodes 不是预期的 file/http 型，请手动检查后再试'
+    }
+
+    # 订阅里没有 HK-/US- 前缀时去掉两组 filter（否则组会是空的）；保留 empty-fallback 防误直连
+    $names = Get-SubscriptionNodeNames $url
+    if ($null -eq $names) { Write-Warn2 '订阅暂时拉不到（稍后内核会自己再拉），本次跳过节点前缀检测' }
+    else {
+        $hasHK = @($names | Where-Object { $_ -like 'HK-*' }).Count -gt 0
+        $hasUS = @($names | Where-Object { $_ -like 'US-*' }).Count -gt 0
+        if ($names.Count -gt 0 -and -not ($hasHK -and $hasUS)) {
+            $text = [regex]::Replace($text, '(?m)^\s+filter: "\^(?:HK|US)-"\s*$', '')
+            Write-Warn2 '订阅节点没有 HK-/US- 前缀，已取消分组过滤（全部节点在两组均可用）'
+        }
+        Write-Info ("订阅节点数：{0}" -f $names.Count)
+    }
+
+    [IO.File]::WriteAllText($ConfigFile, $text, (New-Object Text.UTF8Encoding($false)))
+    return 'updated'
 }
 
 # mihomo -t 不检查 Hy2 证书指纹格式，这里补一道
@@ -267,7 +342,7 @@ function Test-MihomoConfig {
 
 # ---------- 快照 ----------
 function Save-Snapshot([string]$Dest) {
-    foreach ($rel in $ManagedFiles) {
+    foreach ($rel in (Get-ManagedFiles)) {
         $src = Join-Path $ConfDir $rel
         if (Test-Path $src) {
             $dst = Join-Path $Dest $rel
@@ -278,7 +353,7 @@ function Save-Snapshot([string]$Dest) {
 }
 
 function Restore-Snapshot([string]$Src) {
-    foreach ($rel in $ManagedFiles) {
+    foreach ($rel in (Get-ManagedFiles)) {
         $from = Join-Path $Src $rel
         if (Test-Path $from) {
             $to = Join-Path $ConfDir $rel

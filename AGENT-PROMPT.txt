@@ -3,16 +3,20 @@
 1. 把 https://github.com/AndsomeR1110/mihomo-kit 下载到本机（git clone 或下载 ZIP 都行；
    GitHub 连不上就在完整地址前面加 https://gh-proxy.com/ 前缀走镜像），
    放到没有空格的英文路径，例如 C:\mihomo。
-2. 我手里有分享者给我的 nodes.yaml 和 infra-direct.yaml 两个文件，把它们放进
-   <下载目录>\config\private\ 。如果我说还没有这两个文件，先停下来提醒我去找分享者要，
-   不要用模板编。
+2. 节点凭据二选一（我告诉你我有哪种）：
+   A. 订阅链接：把我给你的订阅链接（https://…）单独一行保存为
+      <下载目录>\config\private\subscription.txt（新建文本文件、粘贴链接、保存）。
+   B. 两个文件：把我给你的 nodes.yaml 和 infra-direct.yaml 放进 <下载目录>\config\private\ 。
+   如果我两样都还没拿到，先停下来提醒我去找分享者要，不要用模板编。
 3. 运行 <下载目录>\install.cmd，会弹 UAC（我本人来点确认），随后有两个问题：
    - 桌面「mihomo 面板」快捷方式 → 选 Y
    - 关闭网卡 IPv6 与 Teredo → 我在校园网环境，选 Y
 4. 装完运行 <下载目录>\status.cmd 验收：服务 Running、默认出口有 ip/loc、
    AI 出口 claude.ai loc=US，把结果给我看。
-5. 有问题按仓库里的 AGENT-INSTALL.md 和 README.md 排查；实在不行运行 rescue.cmd
-   恢复直连，然后告诉我卡在哪一步。
+5. 有问题先运行 <下载目录>\doctor.cmd，它会在套件目录生成 doctor-report-*.txt，
+   把那份报告内容给我看（我发给分享者远程排障）；再按仓库里的 AGENT-INSTALL.md
+   和 README.md 排查；实在不行运行 rescue.cmd 恢复直连，然后告诉我卡在哪一步。
 
-注意：config\private\ 里的文件是凭据，不要查看、修改或外传；也不要动我电脑上
-其他代理软件（Clash Verge 之类装完前我会自己退出）。
+注意：config\private\ 里的文件（含 subscription.txt）是凭据，不要查看、修改或外传；
+也不要动我电脑上其他代理软件（Clash Verge 之类装完前我会自己退出）。
+以后升级让我双击 update.cmd 就行，你不用代跑。

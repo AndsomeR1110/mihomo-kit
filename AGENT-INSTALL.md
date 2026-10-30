@@ -22,10 +22,15 @@ Windows 服务方式常驻（TUN 模式接管流量），配本地 zashboard 面
 - 目标目录必须是**无空格的纯英文路径**（如 `C:\mihomo`、`D:\mihomo`）。
   从 ZIP 解压的话先 `Unblock-File` 整个目录，避免 SmartScreen 干扰。
 
-### 2. 私有节点文件
+### 2. 私有节点凭据（二选一）
 
-问用户要分享者发的 `nodes.yaml` 和 `infra-direct.yaml`，放进 `config\private\`。
-用户拿不到就**停下**，提醒他找分享者要；不要用 example 模板编造内容。
+- **订阅模式（推荐）**：问用户要分享者发的订阅链接（https://…），单独一行存为
+  `config\private\subscription.txt`（UTF-8 无所谓，一行链接即可）。此时不需要 `nodes.yaml`，
+  但 `config\private\infra-direct.yaml` 仍需在位。
+- **文件模式**：把分享者发的 `nodes.yaml` 和 `infra-direct.yaml` 放进 `config\private\`。
+
+两种凭据都是**机密**：不读取内容、不复制、不打印。用户拿不到就**停下**提醒他找分享者；
+不要用 example 模板编造内容。
 
 ### 3. 安装
 
@@ -49,7 +54,8 @@ WinSW v2.12.0、zashboard 面板、规则集（GitHub 直连失败自动走 gh-p
 
 ### 5. 交付给用户的口头说明
 
-日常入口三个：`status.cmd` 看状态、`panel.cmd` 开面板、`rescue.cmd` 断网急救。
+日常入口五个：`status.cmd` 看状态（含版本）、`panel.cmd` 开面板、`doctor.cmd` 一键诊断
+（报告发分享者）、`update.cmd` 检查/执行升级、`rescue.cmd` 断网急救。
 改配置流程：改 `config\config.yaml` → `test-config.cmd` → `apply-config.cmd`。
 
 ## 常见问题

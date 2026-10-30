@@ -50,17 +50,31 @@ try {
     Write-Ok '程序文件齐全'
 
     Write-Title '4/7 私有文件检查'
-    $ph = Get-Placeholders
-    if ($ph.Count -gt 0) {
-        $ph | ForEach-Object { Write-Warn2 $_ }
-        Write-Host ''
-        Write-Info '说明：节点信息没有就位。两种解决方式：'
-        Write-Info '  A. 拿到分享者给的 nodes.yaml 和 infra-direct.yaml → 直接放进 config\private\ 覆盖'
-        Write-Info '  B. 自建节点 → 按config\private\nodes.example.yaml 顶部的说明填写'
-        Write-Info '填好后重新运行 install.cmd（之前的进度都会保留）'
-        throw '私有文件未就绪'
+    if (Test-SubscriptionMode) {
+        # 订阅模式：节点在线拉取，只要 infra-direct.yaml + subscription.txt 里的链接
+        if (-not (Test-Path (Join-Path $PrivDir 'infra-direct.yaml'))) {
+            Write-Info '说明：订阅模式仍需要 infra-direct.yaml（分享者提供）→ 放进 config\private\'
+            throw '订阅模式缺 config\private\infra-direct.yaml'
+        }
+        Write-Info ("订阅链接：{0}" -f (Get-SubscriptionUrl))
+        $sub = Enable-SubscriptionProvider
+        if ($sub -eq 'already') { Write-Ok '订阅模式：config.yaml 已指向此订阅' }
+        else { Write-Ok '订阅模式：config.yaml 已切换为在线订阅' }
     }
-    Write-Ok 'nodes.yaml / infra-direct.yaml 已就绪'
+    else {
+        $ph = Get-Placeholders
+        if ($ph.Count -gt 0) {
+            $ph | ForEach-Object { Write-Warn2 $_ }
+            Write-Host ''
+            Write-Info '说明：节点信息没有就位。三种解决方式：'
+            Write-Info '  A. 拿到分享者给的 nodes.yaml 和 infra-direct.yaml → 直接放进 config\private\ 覆盖'
+            Write-Info '  B. 自建节点 → 按 config\private\nodes.example.yaml 顶部的说明填写'
+            Write-Info '  C. 有订阅链接（面板分发的 token 订阅）→ 把链接单独一行存为 config\private\subscription.txt 再重跑'
+            Write-Info '填好后重新运行 install.cmd（之前的进度都会保留）'
+            throw '私有文件未就绪'
+        }
+        Write-Ok 'nodes.yaml / infra-direct.yaml 已就绪'
+    }
 
     Write-Title '5/7 安装选项'
     if ($NoShortcut) { $wantShortcut = $false }
