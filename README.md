@@ -49,6 +49,7 @@ git clone https://github.com/AndsomeR1110/mihomo-kit C:\mihomo
 | `update.cmd` | **一键升级**脚本与文档（你的配置/节点/日志都不动；也可加 `-CheckOnly` 只查不升） | 否 |
 | `logs.cmd` | 实时看内核日志（Ctrl+C 退出） | 否 |
 | `start.cmd` / `stop.cmd` / `restart.cmd` | 启动 / 停止 / 重启服务 | 是 |
+| `import-subscription.cmd` | **一键导入订阅**：粘贴订阅链接（或运行面板下载的导入文件），自动切换为在线订阅并生效 | 重启时是 |
 | `rescue.cmd` | **断网急救**：停服务、关残留系统代理、刷新 DNS、测直连 | 是 |
 
 ## 改配置
