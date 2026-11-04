@@ -42,6 +42,7 @@ if [ -z "$ver" ]; then
     exit 1
 fi
 ok "内核已就绪：$ver"
+ensure_default_exit
 save_snapshot "$APPLIED_DIR"
 if test_egress; then ok '默认出口连通'
 else warn '默认出口不通。若是新配置导致的，运行 rollback.command 退回“已知可用”版本'; fi

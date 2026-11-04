@@ -121,6 +121,9 @@ stop_old
 rm -rf "$APP"
 mv "$BUILD_DIR/MihomoBar.app" "$APP" || die "无法写入 $APP"
 rm -rf "$BUILD_DIR"
+# 登记到 LaunchServices：系统通知权限按“已登记的 App”发放，直接运行可执行文件的进程拿不到
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+    -f "$APP" >/dev/null 2>&1 || warn '登记到 LaunchServices 失败（通知可能显示为“脚本编辑器”）'
 mkdir -p "$(dirname "$AGENT_PLIST")"
 cat > "$AGENT_PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -131,7 +134,8 @@ cat > "$AGENT_PLIST" <<PLIST
     <string>$AGENT_LABEL</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$APP/Contents/MacOS/MihomoBar</string>
+        <string>/usr/bin/open</string>
+        <string>$APP</string>
     </array>
     <key>RunAtLoad</key>
     <true/>

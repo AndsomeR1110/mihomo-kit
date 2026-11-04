@@ -27,6 +27,9 @@ if ver="$(api_version)" && [ -n "$ver" ]; then
     def_node=''
     if [ "$def" = '香港组' ] || [ "$def" = '美国组' ]; then def_node=" → $(group_now "$def")"; fi
     info "默认出口 → $def$def_node"
+    if [ "$(group_leaf '默认出口')" = REJECT ]; then
+        fail '默认出口没有可用节点，境外流量会被全部拒绝：在面板里把「默认出口」切到有节点的组，或运行 restart.command 自动修正'
+    fi
     info "美国组（AI 专用） → $(group_now '美国组')"
 
     title '节点延迟（最近一次自动检测，0 表示不通）'

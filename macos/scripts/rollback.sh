@@ -24,6 +24,7 @@ start_service
 if ver="$(wait_api 30)"; then
     save_snapshot "$APPLIED_DIR"
     ok "内核已就绪：$ver"
+    ensure_default_exit
 else
     fail '恢复后内核仍无法启动，请运行 rescue.command 恢复直连'
     show_recent_log 20

@@ -211,6 +211,55 @@ group_now() {
     json_field "$j" now
 }
 
+# 沿 now 一路展开到具体节点；组里没有可用节点（empty-fallback）时结果是 REJECT
+group_leaf() {
+    local name="$1" now i=0
+    while [ "$i" -lt 8 ]; do
+        now="$(group_now "$name")"
+        if [ -z "$now" ] || [ "$now" = '?' ] || [ "$now" = "$name" ]; then break; fi
+        name="$now"
+        i=$((i + 1))
+    done
+    echo "$name"
+}
+
+api_select() {
+    curl -s --fail --noproxy '*' -m 3 -X PUT -H "Authorization: Bearer $(api_secret)" \
+        -H 'Content-Type: application/json' -d "{\"name\":\"$2\"}" \
+        "$(api_base)/proxies/$(urlencode "$1")" >/dev/null
+}
+
+# 「默认出口」当前指向的组如果没有可用节点（例如订阅里只有美国节点，香港组为空 → REJECT，
+# 所有非 AI 的境外流量都会被拒绝），自动切到第一个能解析到真实节点的候选组。
+# 切换经 API 完成，store-selected 会记住，和在面板里手动切一样。
+ensure_default_exit() {
+    local i=0 j all cand
+    # 内核 API 就绪时节点文件可能还没加载完，这时各组都是空的，不能据此判断
+    while [ "$i" -lt 20 ]; do
+        j="$(api_get /providers/proxies/nodes)" &&
+            [ "$(jxa '(JSON.parse(argv[0]).proxies || []).length' "$j")" -gt 0 ] 2>/dev/null && break
+        sleep 0.5
+        i=$((i + 1))
+    done
+    [ "$i" -lt 20 ] || return 0
+    [ "$(group_leaf '默认出口')" = REJECT ] || return 0
+
+    all="$(jxa '(JSON.parse(argv[0]).all || []).join("\n")' "$(api_get "/proxies/$(urlencode '默认出口')")")"
+    while IFS= read -r cand; do
+        case "$cand" in ''|DIRECT|REJECT) continue ;; esac
+        [ "$(group_leaf "$cand")" = REJECT ] && continue
+        if api_select '默认出口' "$cand"; then
+            warn "「默认出口」原来指向的组里没有可用节点（境外流量会被全部拒绝），已自动切到「${cand}」"
+            info '（节点名以 HK- 开头的进香港组、US- 开头的进美国组；以后补上节点可在面板里切回）'
+            return 0
+        fi
+    done <<EOF
+$all
+EOF
+    fail '「默认出口」下没有任何可用节点：请检查 config/private/nodes.yaml（节点名需以 HK- 或 US- 开头）'
+    return 1
+}
+
 # ---------- 出口实测 ----------
 # 第二个参数为 mixed 时经 mixed-port 代理；否则走系统路由（即 TUN），和真实应用看到的一致
 probe() {
@@ -326,7 +375,8 @@ core_memory_mb() {
 # 其他代理软件（与本套件端口相同、TUN 互相抢路由，不能同时开）
 conflict_app_running() {
     local n
-    for n in clash-verge verge-mihomo verge-mihomo-alpha 'Clash Verge' ClashX 'ClashX Pro' 'ClashX Meta'; do
+    for n in clash-verge verge-mihomo verge-mihomo-alpha 'Clash Verge' ClashX 'ClashX Pro' 'ClashX Meta' \
+             'Mihomo Party' mihomo-party FlClash 'Clash Nyanpasu' clash-nyanpasu; do
         if pgrep -x "$n" >/dev/null 2>&1; then echo "$n"; return 0; fi
     done
     return 1
@@ -334,9 +384,41 @@ conflict_app_running() {
 
 port_listening() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
 
+# 其他程序自带的代理内核（如某些 App 内置的 mihomo、Mihomo Party 的 helper）。
+# 它们不一定冲突（没占端口、没开 TUN 就没事），所以只提示不拦截；不含本套件的内核和菜单栏程序
+other_proxy_cores() {
+    local pid comm b
+    ps -axo pid=,comm= 2>/dev/null | while read -r pid comm; do
+        [ "$comm" = "$MIHOMO_BIN" ] && continue
+        b="${comm##*/}"
+        [ "$b" = MihomoBar ] && continue
+        case "$(printf '%s' "$b" | tr '[:upper:]' '[:lower:]')" in
+            *mihomo*|*clash*|*sing-box*) echo "${b}（PID ${pid}）" ;;
+        esac
+    done
+}
+
+warn_other_proxy_cores() {
+    local found l
+    found="$(other_proxy_cores)"
+    [ -n "$found" ] || return 0
+    warn '发现其他代理内核在运行（端口没冲突，先继续）：'
+    printf '%s\n' "$found" | while IFS= read -r l; do info "  - $l"; done
+    info '  如果它们开着 TUN / 系统代理，会和本套件抢路由；遇到网络异常先把它们关掉'
+}
+
 # ---------- 系统代理 / DNS ----------
 list_network_services() {
     networksetup -listallnetworkservices 2>/dev/null | sed '1d' | grep -v '^\*'
+}
+
+# 只取物理网卡（Wi-Fi、有线、USB 网卡等，设备名 enN）上的网络服务，
+# 不碰 VPN 类服务（Shadowrocket 等，设备名为空）和雷雳网桥，对应 Windows 版的 Get-NetAdapter -Physical
+list_hardware_network_services() {
+    networksetup -listnetworkserviceorder 2>/dev/null | awk '
+        /^\([0-9]+\) / { sub(/^\([0-9]+\) /, ""); name = $0; next }
+        /^\(\*\) /    { name = ""; next }
+        /^\(Hardware Port: / { if (name != "" && $0 ~ /Device: en[0-9]+\)$/) print name; name = "" }'
 }
 
 # 关闭指向本机的系统代理（Clash Verge 等残留）。关掉了至少一个返回 0

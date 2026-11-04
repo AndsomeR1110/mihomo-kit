@@ -12,6 +12,7 @@ title '启动'
 start_service
 if ver="$(wait_api 30)"; then
     ok "内核已就绪：${ver}（开机自启已恢复）"
+    ensure_default_exit
     if test_egress; then ok '默认出口连通'; else warn '默认出口暂时不通，可在面板里换一个节点'; fi
 else
     fail '内核 30 秒内没有就绪，最近日志：'

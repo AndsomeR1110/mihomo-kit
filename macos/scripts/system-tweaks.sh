@@ -1,5 +1,6 @@
 #!/bin/bash
-# 系统层调整：关闭各网络服务（Wi-Fi、有线等）的 IPv6，防止 IPv6 流量绕过 TUN。
+# 系统层调整：关闭物理网卡上的网络服务（Wi-Fi、有线、USB 网卡等）的 IPv6，防止 IPv6 流量绕过 TUN。
+# 不碰 VPN 类服务（Shadowrocket 等）和雷雳网桥。
 #   --apply   关闭（会记录原状态到 backup/system-state-macos.tsv）
 #   --revert  按记录恢复
 # 执行时网络可能短暂断开几秒。macOS 没有 Teredo，无需处理。
@@ -29,7 +30,7 @@ show_state() {
         case "$m" in Off) s='关闭' ;; Automatic) s='开启（自动）' ;; *) s="开启（${m}）" ;; esac
         info "$(printf '%-24s IPv6: %s' "$svc" "$s")"
     done <<LIST
-$(list_network_services)
+$(list_hardware_network_services)
 LIST
 }
 
@@ -48,7 +49,7 @@ apply)
             m="$(ipv6_mode "$svc")"
             [ -n "$m" ] && printf '%s\t%s\n' "$svc" "$m"
         done > "$STATE_FILE" <<LIST
-$(list_network_services)
+$(list_hardware_network_services)
 LIST
         ok "原状态已记录到 $STATE_FILE"
     else

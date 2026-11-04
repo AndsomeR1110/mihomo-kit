@@ -62,4 +62,4 @@ bash ~/mihomo/macos/menubar/build.sh
 - 运行时错误记录在 `~/Library/Logs/mihomo-menubar.log`。
 - 状态行一直「未安装」：内核守护进程还没装，先运行 `macos/install.command`。
 - 状态行没有出口名：检查 `config/config.yaml` 的 `secret` 是否已生成，以及 `http://127.0.0.1:9097/configs` 是否可访问。
-- 通知显示为「脚本编辑器」：首次运行时没有允许 mihomo 菜单栏发通知；到「系统设置 → 通知」里打开即可。
+- 通知显示为「脚本编辑器」：系统没有给 mihomo 菜单栏发通知的权限，程序退回了 AppleScript 通知。先重跑一次 `build.sh`（会把程序登记到 LaunchServices 并经 `open` 启动），再到「系统设置 → 通知 → mihomo 菜单栏」里打开；`~/Library/Logs/mihomo-menubar.log` 里会记录授权失败的原因。

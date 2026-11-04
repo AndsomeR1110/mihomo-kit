@@ -48,6 +48,7 @@ if [ "$svc_running" = 0 ]; then
 fi
 [ -z "$taken" ] || die "端口$taken 已被其他程序占用（常见于其他代理软件）。请先退出占用程序，或改 config.yaml 里的 mixed-port / external-controller 后重试"
 ok '没有端口冲突'
+warn_other_proxy_cores
 
 title '3/7 下载补齐（已有文件自动跳过）'
 prep_args=(--no-pause)
@@ -84,7 +85,7 @@ fi
 if [ "$APPLY_TWEAKS" = 1 ]; then want_tweaks=1
 elif [ "$YES" = 1 ]; then want_tweaks=0
 else
-    read -r -p '关闭各网络服务的 IPv6，防止流量绕过代理（校园网建议 Y，随时可用 system-tweaks-revert 恢复）？[y/N] ' ans2
+    read -r -p '关闭物理网卡（Wi-Fi、有线等）的 IPv6，防止流量绕过代理（不碰 VPN 类服务；校园网建议 Y，随时可用 system-tweaks-revert 恢复）？[y/N] ' ans2
     case "$ans2" in [yY]*) want_tweaks=1 ;; *) want_tweaks=0 ;; esac
 fi
 yn() { if [ "$1" = 1 ]; then echo '是'; else echo '否'; fi; }

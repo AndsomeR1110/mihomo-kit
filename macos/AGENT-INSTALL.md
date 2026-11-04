@@ -9,7 +9,10 @@ launchd 系统守护进程常驻（TUN 模式接管流量），配本地 zashboa
 1. `config/private/nodes.yaml` 与 `config/private/infra-direct.yaml` 是**凭据**：
    不读取、不修改、不复制到别处、不打印内容。你只确认它们「存在且无 `__XXX__` 占位符」。
 2. 不要卸载/修改用户电脑上其他代理软件；检测到 Clash Verge / ClashX 在运行，让用户自己退出。
-3. 需要 root 的脚本会在终端里要开机密码——**密码由用户本人输入**，不要索要、不要代填、不要改 sudoers 绕过。
+3. 需要 root 的脚本会要开机密码——**密码由用户本人输入**，不要索要、不要代填、不要改 sudoers 绕过。
+   你的命令行没有交互终端，`sudo` 输不了密码：这些步骤请用户在访达里**双击对应的 `.command`**，
+   在弹出的终端窗口里输密码；用户回复完成后，你再用不需要 root 的命令（`status.sh` 等）验收，
+   并读 `logs/scripts/` 里最新的运行记录。
    你负责代跑命令、盯输出、验收。
 4. 一切结论以 `macos/status.command` 的实际输出为准；守护进程没 Running 就不算装好。
 
@@ -30,21 +33,21 @@ launchd 系统守护进程常驻（TUN 模式接管流量），配本地 zashboa
 
 ### 3. 安装
 
-运行 `bash ~/mihomo/macos/scripts/install.sh`（等价于双击 `macos/install.command`）。它会用 sudo 要开机密码，
+请用户双击 `~/mihomo/macos/install.command`（需要开机密码，见硬性边界第 3 条）。它
 是幂等的：已完成的步骤自动跳过，失败重跑即可。首次运行自动下载内核 v1.19.32（按芯片选 arm64 / amd64）、
 zashboard 面板、规则集（GitHub 直连失败自动走 gh-proxy.com 镜像）。
 
 用户要回答的两个问题：
 
 1. 桌面「mihomo 面板」快捷方式（免密自动登录）——默认 Y
-2. 关闭各网络服务的 IPv6——校园网建议 Y（随时可 `system-tweaks-revert.command` 恢复）
+2. 关闭物理网卡（Wi-Fi、有线等）的 IPv6，不碰 VPN 类服务——校园网建议 Y（随时可 `system-tweaks-revert.command` 恢复）
 
 只想做检查不装守护进程：`install.sh --dry-run`。
 
 ### 4. 菜单栏图标（可选）
 
-用户想要时运行 `bash ~/mihomo/macos/menubar/build.sh`（**不要加 sudo**）。需要 Xcode 命令行工具：
-没装时脚本会弹系统安装窗口并退出，请用户点「安装」，装完重跑。脚本会请用户输入一次密码登记免密启停。
+用户想要时，请用户双击 `~/mihomo/macos/menubar/install.command`（会要一次密码登记免密启停）。需要 Xcode 命令行工具：
+没装时脚本会弹系统安装窗口并退出，请用户点「安装」，装完再双击一次。
 
 ### 5. 验收（全部满足才算完成）
 

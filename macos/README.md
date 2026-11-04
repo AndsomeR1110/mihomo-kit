@@ -74,7 +74,7 @@ Windows 版的 Mac 移植：mihomo 独立内核以 **launchd 系统守护进程*
 
 | 文件 | 作用 |
 | --- | --- |
-| `system-tweaks-apply.command` | 关闭各网络服务（Wi-Fi、有线等）的 IPv6，防止流量绕过代理（会记录原状态） |
+| `system-tweaks-apply.command` | 关闭物理网卡（Wi-Fi、有线、USB 网卡等）的 IPv6，防止流量绕过代理（会记录原状态；不碰 Shadowrocket 等 VPN 类服务） |
 | `system-tweaks-revert.command` | 恢复到调整前 |
 
 校园网环境建议开启（安装时问过一次）。另建议手动关闭浏览器的「使用安全 DNS」。
@@ -94,6 +94,8 @@ Windows 版的 Mac 移植：mihomo 独立内核以 **launchd 系统守护进程*
 | 内核起不来、日志里有 `operation not permitted` / 读不到配置 | 套件在桌面 / 文稿 / 下载 / iCloud 里：移到 `~/mihomo` 后重跑 `install.command` |
 | 重启电脑后代理没自动开 | 「系统设置 → 通用 → 登录项 → 允许在后台」里确认 mihomo 是打开的；`rescue` 之后需要 `start.command` 恢复自启 |
 | 面板「后端连不上」 | 后端端口应为 **9097**（不是 9090）；`status.command` 里守护进程应为 Running |
+| 除 AI 外的境外网站全打不开，`status.command` 显示「默认出口没有可用节点」 | 订阅里没有香港节点（只有美国节点）时香港组是空的。start / restart / apply-config 会自动把「默认出口」切到有节点的组；也可以在面板里手动切 |
+| 装过别的代理软件，安装器提示「发现其他代理内核在运行」 | 只是提示：端口没冲突就能继续用。若网络异常，先关掉那个软件的 TUN / 系统代理 |
 | AI 网站打不开 | `status.command` 看「AI 出口」是否 loc=US；美国组两个节点都挂时会按设计直接断（不回落） |
 | 校园网登录页不弹 | 先 `stop.command` 登录，再 `start.command`；或在浏览器手动打开校园网登录地址 |
 | 菜单栏启停仍要密码 | 重新双击 `menubar/install.command`（会重新登记免密授权） |

@@ -79,6 +79,23 @@ jobs:
           sudo bash macos/scripts/apply-config.sh --no-pause
           sudo bash macos/scripts/rollback.sh --no-pause
 
+          # 订阅里只有美国节点：香港组为空 → 默认出口应自动切到美国组
+          SECRET="$(sed -n 's/^secret: *"\{0,1\}\([0-9a-f]*\).*/\1/p' config/config.yaml)"
+          sed -i '' 's/name: HK-/name: XX-/' config/private/nodes.yaml
+          sudo bash macos/scripts/apply-config.sh --no-pause | tee "$RUNNER_TEMP/apply.out"
+          grep -q '已自动切到「美国组」' "$RUNNER_TEMP/apply.out"
+          curl -s --noproxy '*' -H "Authorization: Bearer $SECRET" \
+            "http://127.0.0.1:9097/proxies/$(printf '默认出口' | jq -sRr @uri)" | jq -e '.now == "美国组"'
+          sed -i '' 's/name: XX-/name: HK-/' config/private/nodes.yaml
+
+          # 桌面快捷方式（含自定义图标）
+          bash macos/scripts/make-panel-shortcut.sh --dest "$RUNNER_TEMP" --no-pause | tee "$RUNNER_TEMP/lnk.out"
+          test -f "$RUNNER_TEMP/mihomo 面板.webloc"
+          ! grep -q '注意' "$RUNNER_TEMP/lnk.out" || exit 1
+
+          # IPv6 调整只列物理网卡（只读查看，不改系统）
+          bash macos/scripts/system-tweaks.sh --no-pause
+
           sudo bash macos/scripts/stop.sh --no-pause
           ! launchctl print system/com.mihomo-kit.mihomo >/dev/null 2>&1 || exit 1
           ! curl -s -m 2 --noproxy '*' http://127.0.0.1:9097/version || exit 1

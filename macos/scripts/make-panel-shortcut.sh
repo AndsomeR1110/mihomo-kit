@@ -29,9 +29,11 @@ PLIST
 # 换上套件图标（NSImage 能直接读 .ico）；失败不影响使用
 icon="$ROOT/panel-icon.ico"
 if [ -f "$icon" ]; then
-    jxa 'ObjC.import("AppKit");
-         $.NSWorkspace.sharedWorkspace.setIconForFileOptions($.NSImage.alloc.initWithContentsOfFile(argv[0]), argv[1], 0)' \
-        "$icon" "$lnk" >/dev/null || warn '自定义图标设置失败（不影响使用）'
+    # jxa 只接受单个表达式：两步用逗号连接
+    r="$(jxa '(ObjC.import("AppKit"),
+               $.NSWorkspace.sharedWorkspace.setIconForFileOptions(
+                   $.NSImage.alloc.initWithContentsOfFile(argv[0]), argv[1], 0))' "$icon" "$lnk")"
+    [ "$r" = true ] || warn '自定义图标设置失败（不影响使用）'
 else
     warn '没找到 panel-icon.ico，快捷方式将没有自定义图标'
 fi

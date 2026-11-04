@@ -24,6 +24,7 @@ if app="$(conflict_app_running)"; then
 else
     ok '没有其他代理软件在运行'
 fi
+warn_other_proxy_cores
 
 if ! test_mihomo_config; then
     print_test_output
@@ -68,6 +69,7 @@ if ! ver="$(wait_api 30)"; then
     die '启动失败。可运行 rescue.command 恢复直连'
 fi
 ok "内核已就绪：$ver"
+ensure_default_exit
 save_snapshot "$APPLIED_DIR"
 ok '当前配置已保存为“最近一次成功应用”'
 
