@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  mihomo 内核的 launchd 系统守护进程（相当于 Windows 版的 WinSW 服务定义）。
+  模板：install-service 把 __KIT_ROOT__ 换成套件目录后装到 /Library/LaunchDaemons/。
+  不要手动 launchctl load，用 install.command / install-service.command。
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.mihomo-kit.mihomo</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>__KIT_ROOT__/bin/mihomo</string>
+        <string>-d</string>
+        <string>__KIT_ROOT__/config</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>__KIT_ROOT__/config</string>
+
+    <!-- 开机自启；异常退出后自动拉起（正常停止不拉起），两次拉起至少间隔 10 秒 -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <!-- 停止时先发 SIGTERM，给 mihomo 15 秒清理 TUN 路由 -->
+    <key>ExitTimeOut</key>
+    <integer>15</integer>
+
+    <!-- launchd 默认只给 256 个文件句柄，代理连接一多就不够 -->
+    <key>SoftResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>65536</integer>
+    </dict>
+    <key>HardResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>65536</integer>
+    </dict>
+
+    <!-- 日志：logs/mihomo.out.log，由 com.mihomo-kit.logrotate 超过 5 MB 滚动，保留 5 份 -->
+    <key>StandardOutPath</key>
+    <string>__KIT_ROOT__/logs/mihomo.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>__KIT_ROOT__/logs/mihomo.out.log</string>
+</dict>
+</plist>

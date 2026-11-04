@@ -1,5 +1,5 @@
 # =====================================================================
-# mihomo 独立内核配置 · Windows 10/11 · TUN 模式
+# mihomo 独立内核配置 · Windows 10/11 / macOS 12+ 共用 · TUN 模式
 # 适用内核：mihomo v1.19.32（安装器自动下载）
 #
 # 本文件不含任何节点凭据，可以直接发给 AI 审阅或修改：
@@ -154,10 +154,11 @@ rules:
   - IP-CIDR,224.0.0.0/4,DIRECT,no-resolve
   - RULE-SET,private-domain,DIRECT
 
-  # 3. 换网友好：校园网、Windows 联网检测、对时
+  # 3. 换网友好：校园网、Windows / macOS 联网检测（校园网登录页靠它弹出）、对时
   - DOMAIN-SUFFIX,xjtlu.edu.cn,DIRECT
   - DOMAIN-SUFFIX,msftconnecttest.com,DIRECT
   - DOMAIN-SUFFIX,msftncsi.com,DIRECT
+  - DOMAIN,captive.apple.com,DIRECT
   - DST-PORT,123,DIRECT
 
   # 4. 必须走美国：Claude 及其关联服务、其他境外 AI
@@ -189,6 +190,9 @@ dns:
     - "+.msftconnecttest.com"
     - "+.msftncsi.com"
     - "time.windows.com"
+    - "captive.apple.com"
+    - "time.apple.com"
+    - "time.*.apple.com"
     - "+.ntp.org"
     - "stun.*.*"
     - "stun.*.*.*"
@@ -204,6 +208,7 @@ dns:
     "+.xjtlu.edu.cn": system
     "+.msftconnecttest.com": system
     "+.msftncsi.com": system
+    "captive.apple.com": system
   proxy-server-nameserver:
     - https://223.5.5.5/dns-query
   direct-nameserver:          # 直连流量用当前网络自己的 DNS，换网后自动跟随
@@ -229,7 +234,7 @@ sniffer:
 tun:
   enable: true
   stack: gvisor               # 纯用户态，不依赖 Windows 防火墙放行；观察期可试 mips（上游默认）
-  device: Mihomo
+  device: Mihomo               # macOS 只允许 utun 开头的名字，内核会自动改用 utunN（日志里一条警告，可忽略）
   auto-route: true
   auto-detect-interface: true # 换网（学校/宿舍/热点）后自动跟随新网卡
   strict-route: false         # 换网友好；IPv6 泄漏已由系统层关闭 IPv6 解决

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- MihomoBar.app 的 Info.plist 模板：build.sh 把 __KIT_ROOT__ 换成套件目录 -->
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.mihomo-kit.menubar</string>
+    <key>CFBundleName</key>
+    <string>MihomoBar</string>
+    <key>CFBundleDisplayName</key>
+    <string>mihomo 菜单栏</string>
+    <key>CFBundleExecutable</key>
+    <string>MihomoBar</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>12.0</string>
+    <!-- 只在菜单栏显示，不出现在程序坞 -->
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>MihomoKitRoot</key>
+    <string>__KIT_ROOT__</string>
+</dict>
+</plist>

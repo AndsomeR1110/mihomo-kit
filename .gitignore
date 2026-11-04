@@ -11,3 +11,6 @@ backup/
 
 # 二进制
 bin/*.exe
+
+# macOS 内核与菜单栏编译产物
+bin/mihomo

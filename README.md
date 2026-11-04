@@ -3,6 +3,8 @@
 一套开箱即用的 mihomo 独立内核：Windows 服务开机自启 + TUN 全局接管 + 本地面板（zashboard）。
 节点来自分享者的自建 VPS（香港 / 美国双出口）：默认流量走香港，**AI 网站固定走美国**，国内流量直连、不耗 VPS 流量。
 
+> **Mac 用户**：请看 [macos/README.md](macos/README.md)（launchd 守护进程 + 菜单栏图标，配置与节点和 Windows 版通用）。
+
 ## 你需要准备
 
 - Windows 10/11（64 位），有管理员权限

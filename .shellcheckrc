@@ -1,0 +1,2 @@
+# 让 shellcheck 按脚本所在目录解析 source（macos/scripts/*.sh 都 source 同目录的 common.sh）
+source-path=SCRIPTDIR
