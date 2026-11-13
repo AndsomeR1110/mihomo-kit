@@ -1,0 +1,71 @@
+name: Release
+
+# 推送 v* 标签（如 v1.1.1）即自动打包并发布 Release；也可在 Actions 页手动运行。
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要发布的标签（如 v1.1.1；不存在会在当前提交上创建）'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag & check VERSION
+        id: meta
+        run: |
+          VER=$(tr -d ' \r\n' < VERSION)
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            if [ "${{ github.ref_type }}" = "tag" ]; then TAG="${{ github.ref_name }}"; else TAG="v$VER"; fi
+          fi
+          if [ "$TAG" != "v$VER" ]; then
+            echo "::error::标签 $TAG 与 VERSION 文件（$VER）不一致"; exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "ver=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Build packages
+        run: bash .github/release/build.sh
+
+      - name: Release notes
+        run: |
+          VER="${{ steps.meta.outputs.ver }}"
+          {
+            echo "## 下载哪个？"
+            echo
+            echo "| 文件 | 说明 |"
+            echo "| --- | --- |"
+            echo "| **mihomo-kit-$VER-offline.zip** | **推荐**。离线完整包，已内置 mihomo 内核、WinSW、zashboard 面板与规则集，解压即装，不用连 GitHub |"
+            echo "| mihomo-kit-$VER-lite.zip | 精简包，只有脚本；首次运行 install.cmd 时联网下载其余文件 |"
+            echo "| SHA256SUMS.txt | 校验值 |"
+            echo
+            echo "**安装**：解压到没有空格的英文路径（如 \`C:\\mihomo\`）→ 把订阅链接存为 \`config\\private\\subscription.txt\`（或放入 \`nodes.yaml\` + \`infra-direct.yaml\`）→ 双击 \`install.cmd\`。详见 [README](https://github.com/${{ github.repository }}#readme)。"
+            echo
+            echo "> 包内不含任何节点凭据；面板密钥在安装时随机生成。"
+            echo
+            echo "## 更新内容"
+            echo
+            awk -v v="$VER" '$0 ~ "^## "v" " {f=1; next} /^## / {f=0} f' CHANGELOG.md
+          } > notes.md
+          cat notes.md
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" dist/* --title "mihomo-kit $TAG" --notes-file notes.md --target "$GITHUB_SHA"
+          fi

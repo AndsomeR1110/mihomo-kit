@@ -11,3 +11,6 @@ backup/
 
 # 二进制
 bin/*.exe
+
+# 发布打包产物
+dist/
