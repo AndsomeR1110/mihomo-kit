@@ -14,7 +14,11 @@
 
 ## 安装（三选一）
 
-### 方式 A：拿到离线压缩包（最简单，推荐）
+### 方式 A：下载离线压缩包（最简单，推荐）
+
+到 [Releases 页面](https://github.com/AndsomeR1110/mihomo-kit/releases/latest) 下载 **`mihomo-kit-<版本>-offline.zip`**
+（已内置内核、面板和规则集，安装时不用再连 GitHub；GitHub 打不开就在链接前加 `https://gh-proxy.com/`）。
+也可以直接向分享者要这个压缩包。
 
 1. 解压到**没有空格的英文路径**，比如 `C:\mihomo` 或 `D:\mihomo`
 2. 把订阅链接存为 `config\private\subscription.txt`（或把 `nodes.yaml`、`infra-direct.yaml` 放进 `config\private\`）
