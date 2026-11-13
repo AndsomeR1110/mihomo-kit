@@ -4,6 +4,7 @@ name: Release
 on:
   push:
     tags: ['v*']
+    branches: ['claude/project-status-first-release-dkdauh']  # 临时：首次发布用，发布后移除
   workflow_dispatch:
     inputs:
       tag:
@@ -22,8 +23,11 @@ jobs:
       - name: Resolve tag & check VERSION
         id: meta
         run: |
-          TAG="${{ github.event.inputs.tag || github.ref_name }}"
           VER=$(tr -d ' \r\n' < VERSION)
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then
+            if [ "${{ github.ref_type }}" = "tag" ]; then TAG="${{ github.ref_name }}"; else TAG="v$VER"; fi
+          fi
           if [ "$TAG" != "v$VER" ]; then
             echo "::error::标签 $TAG 与 VERSION 文件（$VER）不一致"; exit 1
           fi
