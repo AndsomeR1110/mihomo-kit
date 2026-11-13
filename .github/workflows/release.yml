@@ -4,7 +4,6 @@ name: Release
 on:
   push:
     tags: ['v*']
-    branches: ['claude/project-status-first-release-dkdauh']  # 临时：首次发布用，发布后移除
   workflow_dispatch:
     inputs:
       tag:
